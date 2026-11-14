@@ -70,6 +70,13 @@ STOP_FOR_CLIENT = {
 }
 
 
+def client_stop_reason(api, provider_stop):
+    """The client's spelling of a provider stop reason: both wires spell by
+    stop family, so map the provider's word to its family, then to the
+    client's word for that family."""
+    return STOP_FOR_CLIENT[api][STOP_FAMILY.get(provider_stop, 0)]
+
+
 def is_record(v):
     return isinstance(v, dict)
 
@@ -903,8 +910,7 @@ class Aggregator:
             attempts += 1
             status, text, usage_in, usage_out, stop = self.router.call(provider, req, model["id"])
             if text is not None:
-                family = STOP_FAMILY.get(stop, 0)
-                client_stop = STOP_FOR_CLIENT[api][family]
+                client_stop = client_stop_reason(api, stop)
                 return 200, *build_answer(api, req.stream, model["id"], text,
                                           usage_in, usage_out, client_stop)
             if status in (400, 401):
@@ -922,8 +928,7 @@ class Aggregator:
                 attempts += 1
                 status, text, usage_in, usage_out, stop = self.router.call(provider, req, model["id"])
                 if text is not None:
-                    family = STOP_FAMILY.get(stop, 0)
-                    client_stop = STOP_FOR_CLIENT[api][family]
+                    client_stop = client_stop_reason(api, stop)
                     return 200, *build_answer(api, req.stream, model["id"], text,
                                               usage_in, usage_out, client_stop)
         for provider, model in held_back:
@@ -932,8 +937,7 @@ class Aggregator:
             attempts += 1
             status, text, usage_in, usage_out, stop = self.router.call(provider, req, model["id"])
             if text is not None:
-                family = STOP_FAMILY.get(stop, 0)
-                client_stop = STOP_FOR_CLIENT[api][family]
+                client_stop = client_stop_reason(api, stop)
                 return 200, *build_answer(api, req.stream, model["id"], text,
                                           usage_in, usage_out, client_stop)
         return 503, "application/json", json.dumps(error_body(
